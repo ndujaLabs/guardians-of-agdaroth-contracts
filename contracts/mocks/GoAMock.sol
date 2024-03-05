@@ -7,7 +7,14 @@ import {GoA} from "../GoA.sol";
 
 // This is used to calculate exactly the GAS_LIMIT to be set in the smart contract when receiving a message
 contract GoAMock is GoA {
-  constructor(address owner, address _wormholeRelayer, address _wormhole) GoA(owner, _wormholeRelayer, _wormhole) {}
+  constructor(
+    uint256 minDelay,
+    address[] memory proposers,
+    address[] memory executors,
+    address admin,
+    address _wormholeRelayer,
+    address _wormhole
+  ) GoA(minDelay, proposers, executors, admin, _wormholeRelayer, _wormhole) {}
 
   // used to set the hardcode GAS_LIMIT
   function receiveWormholeMessages(bytes memory payload, bytes[] memory, bytes32, uint16, bytes32) public payable override {

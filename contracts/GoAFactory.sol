@@ -18,42 +18,40 @@ contract GoAFactory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrade
   event PriceSet(uint256 price);
   event StableCoinSet(address stableCoin, bool active);
 
+  struct Config {
+    GoA goa;
+    uint32 price;
+    mapping(address => bool) stableCoins;
+    address[] stableCoinsList;
+  }
+
   error ZeroAddress();
   error InsufficientFunds();
   error UnsupportedStableCoin();
   error InvalidArguments();
   error InvalidDiscount();
 
-  struct ReservedRange {
-    uint112 start;
-    uint112 end;
-  }
-
-  GoA public goa;
-  uint256 public price;
-  mapping(address => bool) public stableCoins;
-  uint256 public discount;
-  address[] private _stableCoins;
+  Config public config;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
   }
 
-  function initialize(address vault_) public initializer {
+  function initialize(address payable vault_) public initializer {
     __Ownable_init(_msgSender());
     __UUPSUpgradeable_init();
-    goa = GoA(vault_);
+    config.goa = GoA(vault_);
   }
 
   // solhint-disable-next-line no-empty-blocks
   function _authorizeUpgrade(address newImplementation) internal virtual override onlyOwner {}
 
   // @notice The price is in points, so that 1 point = 0.01 USD
-  function setPrice(uint256 price_) external virtual onlyOwner {
+  function setPrice(uint32 price_) external virtual onlyOwner {
     // it is owner's responsibility to set a reasonable price
-    price = price_;
-    emit PriceSet(price);
+    config.price = price_;
+    emit PriceSet(price_);
   }
 
   function setStableCoin(address stableCoin, bool active) external virtual onlyOwner {
@@ -63,18 +61,18 @@ contract GoAFactory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrade
       if (ERC20(stableCoin).decimals() < 6) {
         revert UnsupportedStableCoin();
       }
-      if (!stableCoins[stableCoin]) {
-        stableCoins[stableCoin] = true;
-        _stableCoins.push(stableCoin);
+      if (!config.stableCoins[stableCoin]) {
+        config.stableCoins[stableCoin] = true;
+        config.stableCoinsList.push(stableCoin);
         emit StableCoinSet(stableCoin, active);
       }
-    } else if (stableCoins[stableCoin]) {
-      delete stableCoins[stableCoin];
+    } else if (config.stableCoins[stableCoin]) {
+      delete config.stableCoins[stableCoin];
       // no risk of going out of cash because the factory will support just a couple of stable coins
-      for (uint256 i = 0; i < _stableCoins.length; i++) {
-        if (_stableCoins[i] == stableCoin) {
-          _stableCoins[i] = _stableCoins[_stableCoins.length - 1];
-          _stableCoins.pop();
+      for (uint256 i = 0; i < config.stableCoinsList.length; i++) {
+        if (config.stableCoinsList[i] == stableCoin) {
+          config.stableCoinsList[i] = config.stableCoinsList[config.stableCoinsList.length - 1];
+          config.stableCoinsList.pop();
           break;
         }
       }
@@ -83,22 +81,21 @@ contract GoAFactory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrade
   }
 
   function finalPrice(address stableCoin) public view virtual returns (uint256) {
-    return (price * (10 ** ERC20(stableCoin).decimals())) / 100;
+    return (config.price * (10 ** ERC20(stableCoin).decimals())) / 100;
   }
 
   function buy(address stableCoin, uint256[] calldata tokenIds) external virtual nonReentrant {
     uint256 payment = finalPrice(stableCoin) * tokenIds.length;
     if (payment > ERC20(stableCoin).balanceOf(_msgSender())) revert InsufficientFunds();
     for (uint256 i = 0; i < tokenIds.length; i++) {
-      goa.safeMintAndActivate(_msgSender(), tokenIds[i]);
+      config.goa.safeMintAndActivate(_msgSender(), tokenIds[i]);
     }
-    // we manage only trusted stable coins, so no risk of reentrancy
     ERC20(stableCoin).safeTransferFrom(_msgSender(), address(this), payment);
   }
 
   function claim(uint256[] calldata tokenIds) external virtual nonReentrant {
     for (uint256 i = 0; i < tokenIds.length; i++) {
-      goa.safeMintAndActivate(_msgSender(), tokenIds[i]);
+      config.goa.safeMintAndActivate(_msgSender(), tokenIds[i]);
     }
   }
 
@@ -112,6 +109,6 @@ contract GoAFactory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrade
   }
 
   function getStableCoins() external view virtual returns (address[] memory) {
-    return _stableCoins;
+    return config.stableCoinsList;
   }
 }

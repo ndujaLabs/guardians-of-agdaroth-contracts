@@ -14,25 +14,34 @@ describe("Integration test", function () {
   let goa;
   let factory;
   let usdc;
-  let deployer, bob, alice, fred, mike;
+  let admin, proposer, executor, bob, alice, fred, mike;
+  let minDelay = 10;
 
   const wormholeRelayer = "0x27428DD2d3DD32A4D7f7C497eAaa23130d894911";
   const wormhole = wormholeConfig.mainnets.matic[2];
 
   before(async function () {
-    [deployer, bob, alice, fred, mike] = await ethers.getSigners();
-    await CrunaTestUtils.deployCanonical(deployer);
+    [admin, proposer, executor, bob, alice, fred, mike] = await ethers.getSigners();
+    await CrunaTestUtils.deployCanonical(admin);
   });
 
   async function initAndDeploy(getMock = "") {
-    crunaManagerProxy = await CrunaTestUtils.deployManager(deployer);
-    goa = await deployUtils.deploy("GoA" + getMock, deployer.address, wormholeRelayer, wormhole);
+    crunaManagerProxy = await CrunaTestUtils.deployManager(admin);
+    goa = await deployUtils.deploy(
+      "GoA" + getMock,
+      minDelay,
+      [proposer.address],
+      [executor.address],
+      admin.address,
+      wormholeRelayer,
+      wormhole,
+    );
     await goa.init(crunaManagerProxy.address, true, false, 31337 * 1e6, 31337 * 1e6 + 10001);
     factory = await deployUtils.deployProxy("GoAFactory", goa.address);
     await goa.setFactory(factory.address);
-    usdc = await deployUtils.deploy("USDCoin", deployer.address);
+    usdc = await deployUtils.deploy("USDCoin", admin.address);
 
-    await usdc.mint(deployer.address, normalize("900"));
+    await usdc.mint(admin.address, normalize("900"));
     await usdc.mint(bob.address, normalize("900"));
     await usdc.mint(fred.address, normalize("900"));
     await usdc.mint(alice.address, normalize("900"));
@@ -53,7 +62,7 @@ describe("Integration test", function () {
     let tokenId = 31337 * 1e6;
     await expect(factory.buy(usdc.address, [tokenId]))
       .to.emit(goa, "Transfer")
-      .withArgs(addr0, deployer.address, tokenId);
+      .withArgs(addr0, admin.address, tokenId);
 
     await expect(factory.buy(usdc.address, [tokenId - 100])).revertedWith("InvalidTokenId");
 
@@ -63,7 +72,7 @@ describe("Integration test", function () {
   it.only("should calculate expected gas limit when receiving the Wormhole message", async function () {
     await initAndDeploy("Mock");
     let tokenId = 31337 * 1e6 + 100;
-    let payload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [deployer.address, tokenId]);
+    let payload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [admin.address, tokenId]);
     await goa.receiveWormholeMessages(payload, [], bytesX(32, goa.address), 0, bytesX(32, 0));
     // expect(gasUsed.div(1e9).toString()).equal("134530");
   });

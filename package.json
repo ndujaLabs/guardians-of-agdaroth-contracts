@@ -1,7 +1,7 @@
 {
-  "name": "cruna-nft-sample",
-  "version": "0.0.3",
-  "description": "A Cruna Protocol NFT boilerplate",
+  "name": "guardians-of-agdaroth",
+  "version": "0.0.4",
+  "description": "A multi-chain Cruna Protocol NFT",
   "scripts": {
     "clean": "rimraf artifacts cache coverage coverage.json",
     "test": "NODE_ENV=test npx hardhat test",
@@ -16,16 +16,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cruna-cc/cruna-nft-sample.git"
+    "url": "git+https://github.com/ndujaLabs/guardians-of-agdaroth-contracts.git"
   },
   "author": {
     "name": "Francesco Sullo",
     "email": "francesco@sullo.co"
   },
   "bugs": {
-    "url": "https://github.com/cruna-cc/cruna-nft-sample/issues"
+    "url": "https://github.com/ndujaLabs/guardians-of-agdaroth-contracts/issues"
   },
-  "homepage": "https://github.com/cruna-cc/cruna-nft-sample#readme",
+  "homepage": "https://github.com/ndujaLabs/guardians-of-agdaroth-contracts#readme",
   "license": "MIT",
   "devDependencies": {
     "@cruna/protocol": "^0.1.5",
