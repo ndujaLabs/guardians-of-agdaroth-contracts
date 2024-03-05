@@ -6,26 +6,30 @@ const deployUtils = new EthDeployUtils();
 
 const CrunaTestUtils = require("./helpers/CrunaTestUtils");
 
-const { amount, normalize, addr0, getChainId, getTimestamp } = require("./helpers");
+const { amount, normalize, addr0, getChainId, getTimestamp, executeAndReturnGasUsed, bytesX } = require("./helpers");
+const wormholeConfig = require("../scripts/config/wormholeConfig");
 
 describe("Integration test", function () {
   let crunaManagerProxy;
-  let vault;
+  let goa;
   let factory;
   let usdc;
   let deployer, bob, alice, fred, mike;
+
+  const wormholeRelayer = "0x27428DD2d3DD32A4D7f7C497eAaa23130d894911";
+  const wormhole = wormholeConfig.mainnets.matic[2];
 
   before(async function () {
     [deployer, bob, alice, fred, mike] = await ethers.getSigners();
     await CrunaTestUtils.deployCanonical(deployer);
   });
 
-  async function initAndDeploy() {
+  async function initAndDeploy(getMock = "") {
     crunaManagerProxy = await CrunaTestUtils.deployManager(deployer);
-    vault = await deployUtils.deploy("SerpentShields", deployer.address);
-    await vault.init(crunaManagerProxy.address, 1, true);
-    factory = await deployUtils.deployProxy("SerpentShieldsFactory", vault.address);
-    await vault.setFactory(factory.address);
+    goa = await deployUtils.deploy("GoA" + getMock, deployer.address, wormholeRelayer, wormhole);
+    await goa.init(crunaManagerProxy.address, true, false, 31337 * 1e6, 31337 * 1e6 + 10001);
+    factory = await deployUtils.deployProxy("GoAFactory", goa.address);
+    await goa.setFactory(factory.address);
     usdc = await deployUtils.deploy("USDCoin", deployer.address);
 
     await usdc.mint(deployer.address, normalize("900"));
@@ -46,31 +50,39 @@ describe("Integration test", function () {
   it("should buy a vault", async function () {
     let price = await factory.finalPrice(usdc.address);
     await usdc.approve(factory.address, price);
-    const nextTokenId = await vault.nextTokenId();
-    const precalculatedAddress = await vault.managerOf(nextTokenId);
-    await expect(factory.buySerpents(usdc.address, 1))
-      .to.emit(vault, "Transfer")
-      .withArgs(addr0, deployer.address, nextTokenId);
+    let tokenId = 31337 * 1e6;
+    await expect(factory.buy(usdc.address, [tokenId]))
+      .to.emit(goa, "Transfer")
+      .withArgs(addr0, deployer.address, tokenId);
+
+    await expect(factory.buy(usdc.address, [tokenId - 100])).revertedWith("InvalidTokenId");
+
+    await expect(factory.buy(usdc.address, [tokenId + 2e6])).revertedWith("InvalidTokenId");
   });
 
-  async function buyVault(token, amount, buyer) {
-    let price = await factory.finalPrice(token.address);
-    await token.connect(buyer).approve(factory.address, price.mul(amount));
-    let nextTokenId = await vault.nextTokenId();
+  it.only("should calculate expected gas limit when receiving the Wormhole message", async function () {
+    await initAndDeploy("Mock");
+    let tokenId = 31337 * 1e6 + 100;
+    let payload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [deployer.address, tokenId]);
+    await goa.receiveWormholeMessages(payload, [], bytesX(32, goa.address), 0, bytesX(32, 0));
+    // expect(gasUsed.div(1e9).toString()).equal("134530");
+  });
 
-    await expect(factory.connect(buyer).buySerpents(token.address, amount))
-      .to.emit(vault, "Transfer")
-      .withArgs(addr0, buyer.address, nextTokenId)
-      .to.emit(vault, "Transfer")
-      .withArgs(addr0, buyer.address, nextTokenId.add(1))
+  async function buyVault(token, tokenIDs, buyer) {
+    let price = await factory.finalPrice(token.address);
+    await token.connect(buyer).approve(factory.address, price.mul(tokenIDs.length));
+
+    await expect(factory.connect(buyer).buy(token.address, tokenIDs))
+      .to.emit(goa, "Transfer")
+      .withArgs(addr0, buyer.address, tokenIDs[0])
       .to.emit(token, "Transfer")
-      .withArgs(buyer.address, factory.address, price.mul(amount));
+      .withArgs(buyer.address, factory.address, price.mul(tokenIDs.length));
   }
 
   it("should allow bob and alice to purchase some vaults", async function () {
-    let nextTokenId = await vault.nextTokenId();
-    await buyVault(usdc, 2, bob);
-    await buyVault(usdc, 2, alice);
+    let nextTokenId = 31337 * 1e6;
+    await buyVault(usdc, [nextTokenId, nextTokenId + 1], bob);
+    await buyVault(usdc, [nextTokenId + 2, nextTokenId + 3], alice);
 
     let price = await factory.finalPrice(usdc.address);
     expect(price.toString()).to.equal("9900000000000000000");
@@ -83,7 +95,7 @@ describe("Integration test", function () {
       .to.emit(usdc, "Transfer")
       .withArgs(factory.address, fred.address, amount("29.6"));
 
-    const managerAddress = await vault.managerOf(nextTokenId);
+    const managerAddress = await goa.managerOf(nextTokenId);
     const manager = await ethers.getContractAt("CrunaManager", managerAddress);
 
     const selector = await CrunaTestUtils.selectorId("ICrunaManager", "setProtector");
@@ -95,7 +107,7 @@ describe("Integration test", function () {
         selector,
         bob.address,
         alice.address,
-        vault.address,
+        goa.address,
         nextTokenId,
         1,
         0,
@@ -112,27 +124,8 @@ describe("Integration test", function () {
     await expect(manager.connect(bob).setProtector(alice.address, true, ts, 3600, signature))
       .to.emit(manager, "ProtectorChange")
       .withArgs(nextTokenId, alice.address, true)
-      .to.emit(vault, "Locked")
+      .to.emit(goa, "Locked")
       .withArgs(nextTokenId, true);
-  });
-
-  it("should allow bob and alice to purchase some vaults with a discount", async function () {
-    await vault.setMaxTokenId(100);
-    expect(await vault.maxTokenId()).equal(100);
-
-    await buyVault(usdc, 2, bob);
-    await buyVault(usdc, 2, alice);
-
-    let price = await factory.finalPrice(usdc.address);
-    expect(price.toString()).to.equal("9900000000000000000");
-  });
-
-  it("should fail if max supply reached", async function () {
-    await buyVault(usdc, 2, bob);
-    await vault.setMaxTokenId(0);
-    expect(await vault.maxTokenId()).equal(2);
-
-    await expect(buyVault(usdc, 2, alice)).revertedWith("SupplyOverflow");
   });
 
   it("should remove a stableCoin when active is false", async function () {

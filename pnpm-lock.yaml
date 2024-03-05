@@ -6,8 +6,8 @@ settings:
 
 devDependencies:
   '@cruna/protocol':
-    specifier: ^0.1.1
-    version: 0.1.1
+    specifier: ^0.1.5
+    version: 0.1.5
   '@ethersproject/contracts':
     specifier: ^5.7.0
     version: 5.7.0
@@ -113,6 +113,9 @@ devDependencies:
   typescript:
     specifier: ^5.3.3
     version: 5.3.3
+  wormhole-solidity-sdk:
+    specifier: ^0.0.2
+    version: 0.0.2
 
 packages:
 
@@ -182,8 +185,8 @@ packages:
     dev: true
     optional: true
 
-  /@cruna/protocol@0.1.1:
-    resolution: {integrity: sha512-/V7Ck2e0IPqYXs6maPC70K0blSeRf0ce9Rb7TrqG8GTeu4RC1XLzwwSKrEwSA6jL0t6h7DKJXAZ/GoM14RriPg==}
+  /@cruna/protocol@0.1.5:
+    resolution: {integrity: sha512-zsl+/sViIVezJ+Ve73VhgKJx9Nakncfk2vNF0qaVoDe2+S0D72HfFrwrwe9b8SWssXHVzKmxaWijT/BWEv70DQ==}
     dependencies:
       '@openzeppelin/contracts': 5.0.1
       erc6551: 0.3.1
@@ -8887,6 +8890,10 @@ packages:
 
   /workerpool@6.2.1:
     resolution: {integrity: sha512-ILEIE97kDZvF9Wb9f6h5aXK4swSlKGUcOEGiIYb2OOu/IrDU9iwj0fD//SsA6E5ibwJxpEvhullJY4Sl4GcpAw==}
+    dev: true
+
+  /wormhole-solidity-sdk@0.0.2:
+    resolution: {integrity: sha512-muLL+h8N7rmA49+j5B7RKdseUanp4QQ1+ud+BFjSUdKMIOdM8Z1rziMuVTv2wrfpp0zV34YxmsPxmZNIV3IpQA==}
     dev: true
 
   /wrap-ansi@2.1.0:

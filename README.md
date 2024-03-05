@@ -16,7 +16,7 @@ pnpm i
 
 ## Your code
 
-Replace the code in SerpentShields.sol with your own NFT contract code and update the tests in test/integration.test.js to match your contract.
+Replace the code in GoA.sol with your own NFT contract code and update the tests in test/integration.test.js to match your contract.
 
 ## Copyright
 

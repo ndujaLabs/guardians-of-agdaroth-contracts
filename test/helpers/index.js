@@ -35,6 +35,17 @@ const Helpers = {
     const bytes = ethers.utils.toUtf8Bytes(str);
     return ethers.utils.keccak256(bytes);
   },
+
+  bytesX(x, value) {
+    return ethers.utils.hexZeroPad(value, x);
+  },
+
+  async executeAndReturnGasUsed(call) {
+    const tx = await call;
+    const receipt = await tx.wait(); // Wait for transaction to be mined to get the receipt
+    console.log(JSON.stringify(receipt, null, 2));
+    return receipt.gasUsed;
+  },
 };
 
 module.exports = Helpers;

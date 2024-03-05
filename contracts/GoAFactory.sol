@@ -8,23 +8,28 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Initializable, UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-
-import {SerpentShields} from "./SerpentShields.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {GoA} from "./GoA.sol";
 
 //import {console} from "hardhat/console.sol";
 
-contract SerpentShieldsFactory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
+contract GoAFactory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
+  using SafeERC20 for ERC20;
   event PriceSet(uint256 price);
   event StableCoinSet(address stableCoin, bool active);
 
   error ZeroAddress();
   error InsufficientFunds();
   error UnsupportedStableCoin();
-  error TransferFailed();
   error InvalidArguments();
   error InvalidDiscount();
 
-  SerpentShields public vault;
+  struct ReservedRange {
+    uint112 start;
+    uint112 end;
+  }
+
+  GoA public goa;
   uint256 public price;
   mapping(address => bool) public stableCoins;
   uint256 public discount;
@@ -38,7 +43,7 @@ contract SerpentShieldsFactory is Initializable, OwnableUpgradeable, ReentrancyG
   function initialize(address vault_) public initializer {
     __Ownable_init(_msgSender());
     __UUPSUpgradeable_init();
-    vault = SerpentShields(vault_);
+    goa = GoA(vault_);
   }
 
   // solhint-disable-next-line no-empty-blocks
@@ -81,12 +86,20 @@ contract SerpentShieldsFactory is Initializable, OwnableUpgradeable, ReentrancyG
     return (price * (10 ** ERC20(stableCoin).decimals())) / 100;
   }
 
-  function buySerpents(address stableCoin, uint256 amount) external virtual nonReentrant {
-    uint256 payment = finalPrice(stableCoin) * amount;
+  function buy(address stableCoin, uint256[] calldata tokenIds) external virtual nonReentrant {
+    uint256 payment = finalPrice(stableCoin) * tokenIds.length;
     if (payment > ERC20(stableCoin).balanceOf(_msgSender())) revert InsufficientFunds();
-    vault.safeMintAndActivate(_msgSender(), amount);
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      goa.safeMintAndActivate(_msgSender(), tokenIds[i]);
+    }
     // we manage only trusted stable coins, so no risk of reentrancy
-    if (!ERC20(stableCoin).transferFrom(_msgSender(), address(this), payment)) revert TransferFailed();
+    ERC20(stableCoin).safeTransferFrom(_msgSender(), address(this), payment);
+  }
+
+  function claim(uint256[] calldata tokenIds) external virtual nonReentrant {
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      goa.safeMintAndActivate(_msgSender(), tokenIds[i]);
+    }
   }
 
   function withdrawProceeds(address beneficiary, address stableCoin, uint256 amount) external virtual onlyOwner {
@@ -95,7 +108,7 @@ contract SerpentShieldsFactory is Initializable, OwnableUpgradeable, ReentrancyG
       amount = balance;
     }
     if (amount > balance) revert InsufficientFunds();
-    if (!ERC20(stableCoin).transfer(beneficiary, amount)) revert TransferFailed();
+    ERC20(stableCoin).safeTransfer(beneficiary, amount);
   }
 
   function getStableCoins() external view virtual returns (address[] memory) {
