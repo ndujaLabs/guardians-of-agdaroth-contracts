@@ -4,7 +4,7 @@ const ethers = hre.ethers;
 const path = require("path");
 const EthDeployUtils = require("eth-deploy-utils");
 let deployUtils;
-
+const wormholeConfig = require("./config/wormholeConfig");
 const { expect } = require("chai");
 
 async function main() {
@@ -23,7 +23,21 @@ async function main() {
 
   const managerProxy = await deployUtils.attach("CrunaManagerProxy");
 
-  const nft = await deployUtils.deployContractViaNickSFactory(deployer, "GoA", ["address"], [deployer.address], salt);
+  // uint256 minDelay,
+  //     address[] memory proposers,
+  //     address[] memory executors,
+  //     address admin,
+  //     address _wormholeRelayer,
+  //     address _wormhole
+  const addr = deployer.address;
+
+  const nft = await deployUtils.deployContractViaNickSFactory(
+    deployer,
+    "GoA",
+    ["uint256", "address[]", "address[]", "address", "address", "address"],
+    [60, [addr], [addr], addr, wormholeConfig.standard[chainId][0], wormholeConfig.standard[chainId][1]],
+    salt,
+  );
 
   await deployUtils.Tx(
     nft.init(managerProxy.address, BigInt(chainId) * BigInt("1000000"), deployUtils.isMainnet(chainId), { gasLimit: 160000 }),

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL3
 pragma solidity ^0.8.20;
 
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {CrunaProtectedNFTTimeControlled} from "@cruna/protocol/token/CrunaProtectedNFTTimeControlled.sol";
 import {IWormholeReceiver} from "wormhole-solidity-sdk/interfaces/IWormholeReceiver.sol";
 import {Base} from "wormhole-solidity-sdk/Base.sol";
@@ -17,8 +18,13 @@ contract GoA is CrunaProtectedNFTTimeControlled, Base, IWormholeReceiver {
   error WrongValue();
   error NotTheOwner();
 
-  address public factory;
   uint256 public gasLimit = 140_000;
+
+  // on Polygon and Ethereum we have reserved tokens to Everdragons and Everdragons2
+  uint256 public reservedTokens;
+  address public claimer;
+
+  address public factory;
 
   // @dev This modifier will only allow the factory to call the function.
   //   The factory is the contract that manages the sale of the tokens.
@@ -47,16 +53,21 @@ contract GoA is CrunaProtectedNFTTimeControlled, Base, IWormholeReceiver {
     address managerAddress_,
     bool progressiveTokenIds_,
     bool allowUntrustedTransfers_,
-    uint112,
+    // we reuse this parameter for when there is a reserved amount of tokens to some address
+    // first 600 dragons on Polygon reserved to the Everdragons2 collection
+    // first 972 dragons on Ethereum reserved to the Everdragons collection
+    uint112 reservedTokens_,
     uint112
   ) external virtual override {
+    reservedTokens = reservedTokens_;
     _canManage(true);
     if (managerAddress_ == address(0)) revert ZeroAddress();
-    uint112 firstTokenId_ = uint112(block.chainid * 1e6);
+    uint112 firstTokenId_ = uint112(block.chainid * 1e6 + 1);
+    uint112 nextTokenId_ = firstTokenId_ + reservedTokens_;
     nftConf = NftConf({
       progressiveTokenIds: progressiveTokenIds_,
       allowUntrustedTransfers: allowUntrustedTransfers_,
-      nextTokenId: firstTokenId_,
+      nextTokenId: nextTokenId_,
       // we may change this value in the future if we extend the collection
       maxTokenId: uint112(block.chainid * 1e6 + 10000),
       managerHistoryLength: 1,
@@ -78,8 +89,8 @@ contract GoA is CrunaProtectedNFTTimeControlled, Base, IWormholeReceiver {
 
   // @dev This function will mint a new token
   // @param to The address of the recipient
-  function safeMintAndActivate(address to, uint256 tokenId) public virtual onlyFactory {
-    _mintAndActivate(to, tokenId);
+  function safeMintAndActivate(address to, uint256 amount) public virtual onlyFactory {
+    _mintAndActivateByAmount(to, amount);
   }
 
   // @dev This function will update the gas limit, in case at some moment it will come out that the expected limit is not enough
@@ -96,6 +107,21 @@ contract GoA is CrunaProtectedNFTTimeControlled, Base, IWormholeReceiver {
   // @dev This function will return the contract URI of the contract
   function contractURI() public view virtual returns (string memory) {
     return "https://meta.ndujalabs.com/goa/info";
+  }
+
+  function setClaimer(address _claimer) external virtual {
+    _canManage(true);
+    if (reservedTokens == 0) revert Forbidden();
+    claimer = _claimer;
+  }
+
+  function claim(uint256[] calldata tokenIds) external virtual {
+    if (claimer == address(0)) revert Forbidden();
+    IERC721 nft = IERC721(claimer);
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      if (nft.ownerOf(tokenIds[i]) != _msgSender()) revert NotTheTokenOwner();
+      _mintAndActivate(_msgSender(), block.chainid * 1e6 + tokenIds[i]);
+    }
   }
 
   function quoteCrossChainMinting(uint16 targetChain) public view virtual returns (uint256 cost) {

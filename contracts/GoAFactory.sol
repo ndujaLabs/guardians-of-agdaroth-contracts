@@ -27,9 +27,11 @@ contract GoAFactory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrade
 
   error ZeroAddress();
   error InsufficientFunds();
+  error InsufficientAllowance();
   error UnsupportedStableCoin();
   error InvalidArguments();
   error InvalidDiscount();
+  error NoClaimOnThisChain();
 
   Config public config;
 
@@ -81,22 +83,17 @@ contract GoAFactory is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrade
   }
 
   function finalPrice(address stableCoin) public view virtual returns (uint256) {
+    if (!config.stableCoins[stableCoin]) revert UnsupportedStableCoin();
     return (config.price * (10 ** ERC20(stableCoin).decimals())) / 100;
   }
 
-  function buy(address stableCoin, uint256[] calldata tokenIds) external virtual nonReentrant {
-    uint256 payment = finalPrice(stableCoin) * tokenIds.length;
-    if (payment > ERC20(stableCoin).balanceOf(_msgSender())) revert InsufficientFunds();
-    for (uint256 i = 0; i < tokenIds.length; i++) {
-      config.goa.safeMintAndActivate(_msgSender(), tokenIds[i]);
-    }
-    ERC20(stableCoin).safeTransferFrom(_msgSender(), address(this), payment);
-  }
-
-  function claim(uint256[] calldata tokenIds) external virtual nonReentrant {
-    for (uint256 i = 0; i < tokenIds.length; i++) {
-      config.goa.safeMintAndActivate(_msgSender(), tokenIds[i]);
-    }
+  function buy(address stableCoin, uint256 amount) external virtual nonReentrant {
+    uint256 price = finalPrice(stableCoin) * amount;
+    ERC20 token = ERC20(stableCoin);
+    if (price > token.balanceOf(_msgSender())) revert InsufficientFunds();
+    if (price > token.allowance(_msgSender(), address(this))) revert InsufficientAllowance();
+    config.goa.safeMintAndActivate(_msgSender(), amount);
+    token.safeTransferFrom(_msgSender(), address(this), price);
   }
 
   function withdrawProceeds(address beneficiary, address stableCoin, uint256 amount) external virtual onlyOwner {
