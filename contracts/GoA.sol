@@ -16,7 +16,7 @@ contract GoA is CrunaProtectedNFTTimeControlled, Base, IWormholeReceiver {
   error WrongSourceAddress();
   error NotTheMintingChain();
   error WrongValue();
-  error NotTheOwner();
+  error NoReservedTokensOnThisChain();
 
   uint256 public gasLimit = 140_000;
 
@@ -59,6 +59,7 @@ contract GoA is CrunaProtectedNFTTimeControlled, Base, IWormholeReceiver {
     uint112 reservedTokens_,
     uint112
   ) external virtual override {
+    if (nftConf.managerHistoryLength > 0) revert AlreadyInitiated();
     reservedTokens = reservedTokens_;
     _canManage(true);
     if (managerAddress_ == address(0)) revert ZeroAddress();
@@ -111,12 +112,12 @@ contract GoA is CrunaProtectedNFTTimeControlled, Base, IWormholeReceiver {
 
   function setClaimer(address _claimer) external virtual {
     _canManage(true);
-    if (reservedTokens == 0) revert Forbidden();
+    if (reservedTokens == 0) revert NoReservedTokensOnThisChain();
     claimer = _claimer;
   }
 
   function claim(uint256[] calldata tokenIds) external virtual {
-    if (claimer == address(0)) revert Forbidden();
+    if (claimer == address(0)) revert NoReservedTokensOnThisChain();
     IERC721 nft = IERC721(claimer);
     for (uint256 i = 0; i < tokenIds.length; i++) {
       if (nft.ownerOf(tokenIds[i]) != _msgSender()) revert NotTheTokenOwner();
@@ -134,7 +135,7 @@ contract GoA is CrunaProtectedNFTTimeControlled, Base, IWormholeReceiver {
 
   function sendCrossChainMinting(uint16 targetChain, address targetAddress, uint256 tokenId) public payable virtual {
     if (_msgSender() != ownerOf(tokenId)) {
-      revert NotTheOwner();
+      revert NotTheTokenOwner();
     }
     uint256 cost = quoteCrossChainMinting(targetChain);
     if (msg.value != cost) revert WrongValue();
