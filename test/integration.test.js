@@ -6,7 +6,7 @@ const deployUtils = new EthDeployUtils();
 
 const CrunaTestUtils = require("./helpers/CrunaTestUtils");
 
-const { amount, normalize, addr0, getChainId, getTimestamp, executeAndReturnGasUsed, bytesX } = require("./helpers");
+const { amount, normalize, addr0, getChainId, getTimestamp, cl, bytesX } = require("./helpers");
 const wormholeConfig = require("../scripts/config/wormholeConfig");
 
 describe("Integration test", function () {
@@ -27,16 +27,9 @@ describe("Integration test", function () {
 
   async function initAndDeploy(getMock = "") {
     crunaManagerProxy = await CrunaTestUtils.deployManager(admin);
-    goa = await deployUtils.deploy(
-      "GoA" + getMock,
-      minDelay,
-      [proposer.address],
-      [executor.address],
-      admin.address,
-      wormholeRelayer,
-      wormhole,
-    );
-    await goa.init(crunaManagerProxy.address, true, false, 31337 * 1e6, 31337 * 1e6 + 10001);
+    goa = await deployUtils.deploy("GoA" + getMock, minDelay, [proposer.address], [executor.address], admin.address);
+    await goa.initGoA(crunaManagerProxy.address, true, false, 600, addr0, wormholeRelayer);
+    // await goa.setClaimer("evd2");
     factory = await deployUtils.deployProxy("GoAFactory", goa.address);
     await goa.setFactory(factory.address);
     usdc = await deployUtils.deploy("USDCoin", admin.address);
@@ -59,39 +52,34 @@ describe("Integration test", function () {
   it("should buy a vault", async function () {
     let price = await factory.finalPrice(usdc.address);
     await usdc.approve(factory.address, price);
-    let tokenId = 31337 * 1e6;
-    await expect(factory.buy(usdc.address, [tokenId]))
-      .to.emit(goa, "Transfer")
-      .withArgs(addr0, admin.address, tokenId);
-
-    await expect(factory.buy(usdc.address, [tokenId - 100])).revertedWith("InvalidTokenId");
-
-    await expect(factory.buy(usdc.address, [tokenId + 2e6])).revertedWith("InvalidTokenId");
+    let tokenId = (await goa.nftConf()).nextTokenId;
+    expect(tokenId).to.equal(31337 * 1e4 + 601);
+    await expect(factory.buy(usdc.address, 1)).to.emit(goa, "Transfer").withArgs(addr0, admin.address, tokenId);
   });
 
-  it.only("should calculate expected gas limit when receiving the Wormhole message", async function () {
+  it("should calculate expected gas limit when receiving the Wormhole message", async function () {
     await initAndDeploy("Mock");
-    let tokenId = 31337 * 1e6 + 100;
+    let tokenId = 31337 * 1e4 + 100;
     let payload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [admin.address, tokenId]);
     await goa.receiveWormholeMessages(payload, [], bytesX(32, goa.address), 0, bytesX(32, 0));
     // expect(gasUsed.div(1e9).toString()).equal("134530");
   });
 
-  async function buyVault(token, tokenIDs, buyer) {
+  async function buyVault(token, amount, buyer) {
     let price = await factory.finalPrice(token.address);
-    await token.connect(buyer).approve(factory.address, price.mul(tokenIDs.length));
-
-    await expect(factory.connect(buyer).buy(token.address, tokenIDs))
+    await token.connect(buyer).approve(factory.address, price.mul(amount));
+    let tokenId = (await goa.nftConf()).nextTokenId;
+    await expect(factory.connect(buyer).buy(token.address, amount))
       .to.emit(goa, "Transfer")
-      .withArgs(addr0, buyer.address, tokenIDs[0])
+      .withArgs(addr0, buyer.address, tokenId)
       .to.emit(token, "Transfer")
-      .withArgs(buyer.address, factory.address, price.mul(tokenIDs.length));
+      .withArgs(buyer.address, factory.address, price.mul(amount));
   }
 
   it("should allow bob and alice to purchase some vaults", async function () {
-    let nextTokenId = 31337 * 1e6;
-    await buyVault(usdc, [nextTokenId, nextTokenId + 1], bob);
-    await buyVault(usdc, [nextTokenId + 2, nextTokenId + 3], alice);
+    let nextTokenId = (await goa.nftConf()).nextTokenId;
+    await buyVault(usdc, 2, bob);
+    await buyVault(usdc, 2, alice);
 
     let price = await factory.finalPrice(usdc.address);
     expect(price.toString()).to.equal("9900000000000000000");

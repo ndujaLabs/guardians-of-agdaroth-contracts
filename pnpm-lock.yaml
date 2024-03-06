@@ -6,8 +6,8 @@ settings:
 
 devDependencies:
   '@cruna/protocol':
-    specifier: ^0.1.6
-    version: 0.1.6
+    specifier: ^0.1.7
+    version: 0.1.7
   '@ethersproject/contracts':
     specifier: ^5.7.0
     version: 5.7.0
@@ -54,8 +54,8 @@ devDependencies:
     specifier: ^0.3.1
     version: 0.3.1
   eth-deploy-utils:
-    specifier: 1.0.0-beta.11
-    version: 1.0.0-beta.11(@nomiclabs/hardhat-ethers@2.2.3)(@nomiclabs/hardhat-etherscan@3.1.8)(ethers@5.7.2)(typescript@5.3.3)
+    specifier: ^1.0.0
+    version: 1.0.0(@nomiclabs/hardhat-ethers@2.2.3)(@nomiclabs/hardhat-etherscan@3.1.8)(ethers@5.7.2)(typescript@5.3.3)
   eth-sig-util:
     specifier: ^3.0.1
     version: 3.0.1
@@ -185,8 +185,8 @@ packages:
     dev: true
     optional: true
 
-  /@cruna/protocol@0.1.6:
-    resolution: {integrity: sha512-A5hrM1UpIyeEPe242zuuau1ZyBXBM/6IlSEtLrk1CIGaH4aV+Oi/F+J7YQXuIwElj8d1UqEWriGPZRN1ou98fw==}
+  /@cruna/protocol@0.1.7:
+    resolution: {integrity: sha512-tqHVRg9Axm99npZJ6YAUJB3nqVA12K/Otb0eFd57BoE9yT8QLFk4Cz0GYVfVyS4YAm9nGXFDezJkhjRc7IVYKg==}
     dependencies:
       '@openzeppelin/contracts': 5.0.1
       erc6551: 0.3.1
@@ -3697,8 +3697,8 @@ packages:
     engines: {node: '>= 0.6'}
     dev: true
 
-  /eth-deploy-utils@1.0.0-beta.11(@nomiclabs/hardhat-ethers@2.2.3)(@nomiclabs/hardhat-etherscan@3.1.8)(ethers@5.7.2)(typescript@5.3.3):
-    resolution: {integrity: sha512-3G2ZVDp76kzaR+pj53uZUks3ldIet4G/uTMXMEx63Aam2szo4bIgDc43t4W6kHaABdzohudMdH0izJod6SiPmQ==}
+  /eth-deploy-utils@1.0.0(@nomiclabs/hardhat-ethers@2.2.3)(@nomiclabs/hardhat-etherscan@3.1.8)(ethers@5.7.2)(typescript@5.3.3):
+    resolution: {integrity: sha512-NobMdI4vU7yqn8zp4j3mhW6x2Uro9gBzwMo438OShap3RGXShHcxyATh2zdyQg4mtAw2QB52hlb5wRPuqFixKA==}
     dependencies:
       '@ethersproject/contracts': 5.7.0
       '@openzeppelin/hardhat-upgrades': 1.28.0(@nomiclabs/hardhat-ethers@2.2.3)(@nomiclabs/hardhat-etherscan@3.1.8)(ethers@5.7.2)(hardhat@2.20.1)

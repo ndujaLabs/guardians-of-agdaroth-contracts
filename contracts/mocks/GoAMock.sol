@@ -11,16 +11,14 @@ contract GoAMock is GoA {
     uint256 minDelay,
     address[] memory proposers,
     address[] memory executors,
-    address admin,
-    address _wormholeRelayer,
-    address _wormhole
-  ) GoA(minDelay, proposers, executors, admin, _wormholeRelayer, _wormhole) {}
+    address admin
+  ) GoA(minDelay, proposers, executors, admin) {}
 
   // used to set the hardcode GAS_LIMIT
   function receiveWormholeMessages(bytes memory payload, bytes[] memory, bytes32, uint16, bytes32) public payable override {
     //    uint256 g = gasleft();
     (address sender, uint256 tokenId) = abi.decode(payload, (address, uint256));
-    _mintAndActivate(sender, block.chainid * 1e6 + (tokenId % 1e6));
+    _mintAndActivate(sender, tokenId);
     //    console.log("Gas used: %d", g - gasleft());
   }
 }

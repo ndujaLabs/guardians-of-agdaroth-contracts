@@ -2,6 +2,8 @@ const hre = require("hardhat");
 const ethers = hre.ethers;
 const BN = require("bn.js");
 
+let count = 0;
+
 const Helpers = {
   bytes4(bytes32value) {
     return ethers.utils.hexDataSlice(bytes32value, 0, 4);
@@ -45,6 +47,10 @@ const Helpers = {
     const receipt = await tx.wait(); // Wait for transaction to be mined to get the receipt
     console.log(JSON.stringify(receipt, null, 2));
     return receipt.gasUsed;
+  },
+
+  cl(...args) {
+    console.log("\n >>>", count++, ...args, "\n");
   },
 };
 
