@@ -11,10 +11,10 @@ async function main() {
     let json = require(source);
     ABIs.contracts[rename || name] = json.abi;
   }
-  abi("SafeDragons.sol", "contracts");
-  abi("SafeDragonsFactory", "contracts/factory");
+  abi("GoA", "contracts");
+  abi("GoAFactory", "contracts");
 
-  await fs.writeFile(path.resolve(__dirname, "../export/ABIs.json"), JSON.stringify(ABIs, null, 2));
+  await fs.writeFile(path.resolve(__dirname, "../export/GoA.json"), JSON.stringify(ABIs, null, 2));
 }
 
 main()
