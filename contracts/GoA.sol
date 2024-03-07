@@ -6,7 +6,6 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {CrunaProtectedNFTTimeControlled} from "@cruna/protocol/token/CrunaProtectedNFTTimeControlled.sol";
 import {IWormholeReceiver} from "wormhole-solidity-sdk/interfaces/IWormholeReceiver.sol";
 import {IWormholeRelayer} from "wormhole-solidity-sdk/interfaces/IWormholeRelayer.sol";
-import {IWormhole} from "wormhole-solidity-sdk/interfaces/IWormhole.sol";
 
 //import "hardhat/console.sol";
 
