@@ -63,7 +63,7 @@
     "rimraf": "^5.0.5",
     "solhint": "^4.0.0",
     "solidity-coverage": "^0.8.10",
-    "typescript": "^5.3.3",
+    "typescript": "^5.4.2",
     "wormhole-solidity-sdk": "^0.0.2"
   },
   "lint-staged": {
