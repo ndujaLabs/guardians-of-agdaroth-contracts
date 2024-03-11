@@ -64,7 +64,7 @@
     "solhint": "^4.0.0",
     "solidity-coverage": "^0.8.10",
     "typescript": "^5.3.3",
-    "wormhole-solidity-sdk": "^0.0.2"
+    "wormhole-solidity-sdk": "^0.0.3"
   },
   "lint-staged": {
     "*.js": "prettier --write",

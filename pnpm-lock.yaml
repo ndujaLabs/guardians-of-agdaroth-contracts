@@ -114,8 +114,8 @@ devDependencies:
     specifier: ^5.3.3
     version: 5.3.3
   wormhole-solidity-sdk:
-    specifier: ^0.0.2
-    version: 0.0.2
+    specifier: ^0.0.3
+    version: 0.0.3
 
 packages:
 
@@ -8892,8 +8892,8 @@ packages:
     resolution: {integrity: sha512-ILEIE97kDZvF9Wb9f6h5aXK4swSlKGUcOEGiIYb2OOu/IrDU9iwj0fD//SsA6E5ibwJxpEvhullJY4Sl4GcpAw==}
     dev: true
 
-  /wormhole-solidity-sdk@0.0.2:
-    resolution: {integrity: sha512-muLL+h8N7rmA49+j5B7RKdseUanp4QQ1+ud+BFjSUdKMIOdM8Z1rziMuVTv2wrfpp0zV34YxmsPxmZNIV3IpQA==}
+  /wormhole-solidity-sdk@0.0.3:
+    resolution: {integrity: sha512-4b1GkJ1mACxPl6UoUoLG6w0gl3uPqQqQePe1IG49qtPrIaL61RIHFZ3yfKznQIy6+/XdKEKPJtKASxLWkxWp2Q==}
     dev: true
 
   /wrap-ansi@2.1.0:
