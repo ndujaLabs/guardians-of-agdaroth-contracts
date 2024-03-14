@@ -28,7 +28,7 @@
   "homepage": "https://github.com/ndujaLabs/guardians-of-agdaroth-contracts#readme",
   "license": "MIT",
   "devDependencies": {
-    "@cruna/protocol": "^0.1.7",
+    "@cruna/protocol": "^0.2.7",
     "@ethersproject/contracts": "^5.7.0",
     "@metamask/eth-sig-util": "^7.0.1",
     "@nomiclabs/hardhat-ethers": "^2.2.3",

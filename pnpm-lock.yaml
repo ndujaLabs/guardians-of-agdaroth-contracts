@@ -6,8 +6,8 @@ settings:
 
 devDependencies:
   '@cruna/protocol':
-    specifier: ^0.1.7
-    version: 0.1.7
+    specifier: ^0.2.7
+    version: 0.2.7
   '@ethersproject/contracts':
     specifier: ^5.7.0
     version: 5.7.0
@@ -185,10 +185,10 @@ packages:
     dev: true
     optional: true
 
-  /@cruna/protocol@0.1.7:
-    resolution: {integrity: sha512-tqHVRg9Axm99npZJ6YAUJB3nqVA12K/Otb0eFd57BoE9yT8QLFk4Cz0GYVfVyS4YAm9nGXFDezJkhjRc7IVYKg==}
+  /@cruna/protocol@0.2.7:
+    resolution: {integrity: sha512-Hn9G/992Cu8GIDHB88Vk/OhEL8EZzBMtmFRiyyBtQ1q2YBUFziu9lNflUPZM0Yuy1L/vCpjzFwfX70q/D/XITQ==}
     dependencies:
-      '@openzeppelin/contracts': 5.0.1
+      '@openzeppelin/contracts': 5.0.2
       erc6551: 0.3.1
     dev: true
 
@@ -1272,6 +1272,10 @@ packages:
 
   /@openzeppelin/contracts@5.0.1:
     resolution: {integrity: sha512-yQJaT5HDp9hYOOp4jTYxMsR02gdFZFXhewX5HW9Jo4fsqSVqqyIO/xTHdWDaKX5a3pv1txmf076Lziz+sO7L1w==}
+    dev: true
+
+  /@openzeppelin/contracts@5.0.2:
+    resolution: {integrity: sha512-ytPc6eLGcHHnapAZ9S+5qsdomhjo6QBHTDRRBFfTxXIpsicMhVPouPgmUPebZZZGX7vt9USA+Z+0M0dSVtSUEA==}
     dev: true
 
   /@openzeppelin/defender-base-client@1.54.1(debug@4.3.4):

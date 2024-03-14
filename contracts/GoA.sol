@@ -44,7 +44,7 @@ contract GoA is CrunaProtectedNFTTimeControlled, IWormholeReceiver {
     address admin
   ) CrunaProtectedNFTTimeControlled("Guardians of Agdaroth", "GoA", minDelay, proposers, executors, admin) {}
 
-  function init(address, bool, bool, uint256, uint256) external virtual override {
+  function init(address, bool, bool, uint112, uint112) external virtual override {
     revert Disabled();
   }
 
@@ -57,12 +57,12 @@ contract GoA is CrunaProtectedNFTTimeControlled, IWormholeReceiver {
     address relayer_
   ) external virtual {
     _canManage(true);
-    if (nftConf.managerHistoryLength > 0) revert AlreadyInitiated();
+    if (_nftConf.managerHistoryLength > 0) revert AlreadyInitiated();
     reservedTokens = reservedTokens_;
     if (managerAddress_ == address(0)) revert ZeroAddress();
     uint112 firstTokenId_ = uint112(block.chainid * 1e4 + 1);
     uint112 nextTokenId_ = uint112(firstTokenId_ + reservedTokens_);
-    nftConf = NftConf({
+    _nftConf = NftConf({
       progressiveTokenIds: progressiveTokenIds_,
       allowUntrustedTransfers: allowUntrustedTransfers_,
       nextTokenId: uint112(nextTokenId_),
@@ -71,7 +71,7 @@ contract GoA is CrunaProtectedNFTTimeControlled, IWormholeReceiver {
       managerHistoryLength: 1,
       unusedField: 0
     });
-    managerHistory.push(ManagerHistory({managerAddress: managerAddress_, firstTokenId: firstTokenId_, lastTokenId: 0}));
+    _managerHistory.push(ManagerHistory({managerAddress: managerAddress_, firstTokenId: firstTokenId_, lastTokenId: 0}));
     claimer = claimer_;
     wormholeRelayer = IWormholeRelayer(relayer_);
   }
@@ -130,7 +130,7 @@ contract GoA is CrunaProtectedNFTTimeControlled, IWormholeReceiver {
   }
 
   function nextAvailableTokenId() public view virtual returns (uint256) {
-    return nftConf.nextTokenId;
+    return _nftConf.nextTokenId;
   }
 
   function sendCrossChainMinting(uint16 targetChain, address, uint256 tokenId) public payable virtual {
